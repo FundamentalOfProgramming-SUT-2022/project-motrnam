@@ -14,6 +14,7 @@ char fristword[30];//for saving frist word
 //this function saves frist word in fristword array
 char word[70][70];
 char line[600];
+char line2[300];//reading from file
 char test[20];
 char name_of_new_file[20];
 char temp_address[70];//saving address
@@ -109,6 +110,8 @@ int has_file(char file_name[100])
     }
     return 0;
 }
+
+//main function
 int main(){
 system("color 40");//red
 system("cls");//clean the screen
@@ -117,8 +120,12 @@ clean_word();
 clean();
 clean_name();
 gets(command_save);
+int pp=0;
+if(command_save[0]=='\0'||command_save[0]=='\n'){
+    pp=1;
+}
 line_to_word();
-if(!is_valid_one()){
+if((!is_valid_one()&&(pp==0))){
     printf("invalid command");
     printf("\n");
 }
@@ -128,7 +135,7 @@ if(!strcmp(fristword,"finish")){
 if(!strcmp(fristword,"createfile")){
     //mkdir("ali");
     //mkdir("ali/alii");
-        printf("sal");
+        //printf("sal");
     if(has_file(word[2])){
         printf("This file exists already\n");
     }
@@ -151,6 +158,21 @@ if(!strcmp(fristword,"createfile")){
     FILE* naghavi;
     naghavi = fopen(word[2],"w+");
     fclose(naghavi);
+    }
+}
+if(!strcmp("cat",fristword)){
+        if(!has_file(word[2])){
+        printf("%s Sorry! No file found!\n",word[2]);
+    }
+    else{
+    FILE * myfile;
+    myfile=fopen(word[2],"r+");
+    while(!feof(myfile)){
+        fgets(line2,298,myfile);
+        printf("%s",line2);
+    }
+    fclose(myfile);
+    printf("\n");
     }
 }
 }
