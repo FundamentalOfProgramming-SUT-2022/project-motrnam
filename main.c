@@ -27,6 +27,97 @@ char clipcut[4000];//for cut
 //finding first element
 char word_of_file[40];//for get input from file
 char word_of_line_array[20][20];//word pro
+//for undo function
+int make_copy_file(char address[500]){
+FILE * copy;
+copy=fopen("copy.txt","w+");
+system("attrib +h +s copy.txt");
+FILE * org;
+org=fopen(address,"r+");
+char t=' ';
+while(t!=EOF){
+    t=fgetc(org);
+    if(t!=EOF){
+        fputc(t,copy);
+    }
+}
+fclose(org);
+fclose(copy);
+}
+//auto indent function
+int atuo_indent(char file_address[500]){
+FILE * naghavi;
+naghavi=fopen(file_address,"r+");
+FILE * moghaddam;
+moghaddam=fopen("mytemp.txt","w");
+char temp;
+int i=0;
+int space_mode=0;
+while(temp!=EOF){
+    temp=fgetc(naghavi);
+    if(temp!=EOF){
+       if(temp==' '&&space_mode==0){
+        space_mode=1;
+        fputc(temp,moghaddam);
+       }
+       if(temp!=' '){
+        space_mode=0;
+        if(temp=='\n'){
+            space_mode=1;
+        }
+        fputc(temp,moghaddam);
+       }
+    }
+}
+fclose(naghavi);
+fclose(moghaddam);
+remove(file_address);
+rename("mytemp.txt",file_address);
+FILE * morteza;
+morteza=fopen(file_address,"r+");
+FILE * salam;
+salam=fopen("_temp1_.txt","w+");
+temp=' ';
+int control=0;
+while(temp!=EOF){
+    temp=fgetc(morteza);
+    if(temp!=EOF){
+        if(temp=='\n'&&control==1){
+            temp=fgetc(morteza);
+            control=0;
+            if(temp==EOF){
+                break;
+            }
+        }
+        if(temp=='{'){
+            fputc(temp,salam);
+            fputc('\n',salam);
+            fputc(' ',salam);
+            fputc(' ',salam);
+            fputc(' ',salam);
+            fputc(' ',salam);
+        }
+        if(temp=='}'){
+            fputc('\n',salam);
+            fputc(' ',salam);
+            fputc(' ',salam);
+            fputc(' ',salam);
+            fputc(' ',salam);
+            fputc(temp,salam);
+            fputc('\n',salam);
+            control=1;
+        }
+        if(temp!='{'&&temp!='}'){
+            putc(temp,salam);
+        }
+    }
+}
+fclose(morteza);
+fclose(salam);
+remove(file_address);
+rename("_temp1_.txt",file_address);
+return 0;
+}
 //compare two number
 int mini(int a,int b){
 if(a<b){
@@ -34,6 +125,7 @@ if(a<b){
 }
 return b;
 }
+//remove elemen
 int remove_elment(char address[500],int start,int num_of_char){
 FILE * temp;
 FILE * org;
@@ -685,8 +777,10 @@ if(!strcmp(fristword,"compare")){
     }
 }
 if(!strcmp(fristword,"grep")){
+        int mystop=0;
     if(!strcmp(word[1],"--str")){
-
+        printf("invalid!");
+        mystop=1;
     }
 }
 
@@ -769,5 +863,9 @@ if(!strcmp("pastestr",word[0])){
 insertstr(word[2],lin1,co1,clipcopy);
 }
 }
+}
+if(!strcmp("atuo-indent",word[0])){
+    make_copy_file(word[1]);
+    auto_indent(word[1]);
 }
 }
