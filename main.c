@@ -6,16 +6,17 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <dirent.h>
 
 //https://github.com/FundamentalOfProgramming-SUT-2022/project-motrnam.git
 //start project naghavi moghaddam
-
+int last_actin=0;
 char junk[150];
 char command_save[600];//for saving the command
 char fristword[30];//for saving frist word
 //this function saves frist word in fristword array
-char word[20][500];
-char line[600];
+char word[20][500];//separate word here
+char line[600];//line saved here
 char line2[300];//reading from file
 char test[20];
 char name_of_new_file[20];
@@ -27,13 +28,62 @@ char clipcut[4000];//for cut
 //finding first element
 char word_of_file[40];//for get input from file
 char word_of_line_array[20][20];//word pro
+char word_of_files[20000];
+int state_of_star[10];//for find & replace & grep
+int place_of_word[100];//for find & replace & grep
+char seq_of_word[10][22];//for find & replace & grep
+char one_word[20];
+char fake_add[500];
+char old_address[500];//old address of file
+int num_of_modi=0;
+char modify_file[100][100];
+//has =D function......(arman)
+int has_d(){
+    for(int i=0;i<599;i++){
+        if(line[i]=='='&&line[i+1]=='D'){
+            return 1;
+        }
+    }
+    return 0;
+}
+//fake address
+void make_copy(char address[500])
+{
+    char temp_text[2000];
+    strcpy(modify_file[num_of_modi], address);
+    strcat(modify_file[num_of_modi], "_copy_.txt");
+    remove(modify_file[num_of_modi]);
+    FILE * salam1;FILE * org;
+    org=fopen(address,"r+");
+    salam1= fopen(modify_file[num_of_modi], "w");
+    while (!feof(org))
+    {
+        fgets(temp_text, 2000 ,org);
+        if(!strcmp(temp_text,EOF)){
+        fputs(temp_text,salam1);
+        }
+
+    }
+    rewind(salam1);
+    fclose(salam1);
+    SetFileAttributes(modify_file[num_of_modi], FILE_ATTRIBUTE_HIDDEN);
+    num_of_modi++;
+}
 //for undo function
 int make_copy_file(char address[500]){
+system("attrib -h -s _copy_.txt");
+remove("_copy_.txt");
+    for(int k=0;k<500;k++){
+        old_address[k]='\0';
+    }
 FILE * copy;
-copy=fopen("copy.txt","w+");
-system("attrib +h +s copy.txt");
+
+copy=fopen("_copy_.txt","w+");
 FILE * org;
 org=fopen(address,"r+");
+if(org==NULL){
+    return -1;
+}
 char t=' ';
 while(t!=EOF){
     t=fgetc(org);
@@ -43,14 +93,65 @@ while(t!=EOF){
 }
 fclose(org);
 fclose(copy);
+system("attrib +h +s _copy_.txt");
+strcpy(old_address,address);
+return 0;
+}
+void file_yab(char *basePath, const int r,int depth){
+    int i;
+    char masir[1000];
+    struct dirent *dp;
+    DIR *naghavi = opendir(basePath);
+    if (!naghavi)
+        return;
+    while ((dp = readdir(naghavi)) != NULL)
+    {
+        if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0 && strcmp(dp->d_name,".git")!=0)
+        {
+            for (i=0; i<r; i++)
+            {
+                if (i%2 == 0 || i == 0)
+                    printf("%c", 179);
+                else
+                    printf(" ");
+            }
+            printf("%c%c%s\n", 195, 196, dp->d_name);
+            strcpy(masir,basePath);
+            strcat(masir,"/");
+            strcat(masir,dp->d_name);
+            if(r<2*depth){
+            file_yab(masir,r+2,depth);
+            }
+        }
+    }
+    closedir(naghavi);
+}
+//shift char
+void shift_char(int n,int b){
+for(int i=n;i<20;i++){
+    seq_of_word[b][i]=seq_of_word[b][i+1];
+}
+}
+//has star function
+int if_star(int n){
+for(int o=1;o<(strlen(seq_of_word[n])-1);o++){
+    if(seq_of_word[n][o]=='*'){
+        return 1;
+    }
+}
+return 0;
 }
 //auto indent function
 int atuo_indent(char file_address[500]){
+int last_b=0;
+int number_of_opening=0;
+int char_number=0;
 FILE * naghavi;
 naghavi=fopen(file_address,"r+");
 FILE * moghaddam;
 moghaddam=fopen("mytemp.txt","w");
 char temp;
+char lastchar;
 int i=0;
 int space_mode=0;
 while(temp!=EOF){
@@ -65,7 +166,11 @@ while(temp!=EOF){
         if(temp=='\n'){
             space_mode=1;
         }
+        if(lastchar!=' '&&temp=='{'){
+            fputc(' ',moghaddam);
+        }
         fputc(temp,moghaddam);
+        lastchar=temp;
        }
     }
 }
@@ -78,8 +183,10 @@ morteza=fopen(file_address,"r+");
 FILE * salam;
 salam=fopen("_temp1_.txt","w+");
 temp=' ';
+char old;
 int control=0;
 while(temp!=EOF){
+    old=temp;
     temp=fgetc(morteza);
     if(temp!=EOF){
         if(temp=='\n'&&control==1){
@@ -89,20 +196,26 @@ while(temp!=EOF){
                 break;
             }
         }
+        if(temp=='\n'){
+            char_number=0;
+        }
+        if(temp!='\n'){
+            char_number++;
+        }
         if(temp=='{'){
             fputc(temp,salam);
-            fputc('\n',salam);
-            fputc(' ',salam);
-            fputc(' ',salam);
-            fputc(' ',salam);
-            fputc(' ',salam);
-        }
+            for(int i1=0;i1<4*number_of_opening+4;i1++){
+                fputc(' ',salam);
+            }
+            number_of_opening++;
         if(temp=='}'){
+            if(old!='{'){
             fputc('\n',salam);
-            fputc(' ',salam);
-            fputc(' ',salam);
-            fputc(' ',salam);
-            fputc(' ',salam);
+            }
+            for(int i3=0;i3<4*number_of_opening;i3++){
+                fputc(' ',salam);
+            }
+            number_of_opening--;
             fputc(temp,salam);
             fputc('\n',salam);
             control=1;
@@ -112,6 +225,7 @@ while(temp!=EOF){
         }
     }
 }
+    }
 fclose(morteza);
 fclose(salam);
 remove(file_address);
@@ -125,7 +239,17 @@ if(a<b){
 }
 return b;
 }
-//remove elemen
+//byword function
+int byword(int input){
+    int number_word=0;
+for(int p=0;p<input;p++){
+   if(word_of_files[p]==' '||word_of_files[p]=='\n'){
+    number_word++;
+   }
+}
+return number_word;
+}
+//remove element
 int remove_elment(char address[500],int start,int num_of_char){
 FILE * temp;
 FILE * org;
@@ -315,6 +439,204 @@ if(command_save[number1]=='"'){
 }
 
 }
+
+int can_accept(int start){
+int t=start;
+if(start!=0){
+    if(word_of_files[start-1]!='\n'&&word_of_files[start-1]!=' '){
+        return -1;
+    }
+    if(word_of_files[start]==' '||word_of_files[start]=='\n'){
+        return -1;
+    }
+}
+int i1=0;
+int i2=0;
+while(state_of_star[i1]!=-1){
+if(state_of_star[i1]==0){
+        t=start;
+        i2=0;
+          int lenght=0;
+
+    while(word_of_files[t+lenght]!=' '&&word_of_files[t+lenght]!='\n'){
+        lenght++;
+    }
+    if(lenght<strlen(seq_of_word[i1])){
+        return -1;
+    }
+    while(word_of_files[t]!=' '&&word_of_files[t]!='\n'){
+        if(seq_of_word[i1][i2]!=word_of_files[t]){
+                //printf("%c%c?%i %i %i\n",seq_of_word[i1][i2],word_of_file[t],t,i1,i2);
+                //printf("a");
+            return -1;
+        }
+        i2++;t++;
+    }
+    t++;
+    start=t;
+}
+if(state_of_star[i1]==1){
+    int lenght=0;
+    while(word_of_files[t+lenght]!=' '&&word_of_files[t+lenght]!='\n'){
+        lenght++;
+    }
+    if(lenght<strlen(seq_of_word[i1])){
+        return -1;
+    }
+    int place2=strlen(seq_of_word[i1])-1;
+    int place=start+lenght-1;
+      while(place2>=0&&seq_of_word[i1][place2]!='*'){
+            //printf("%c%c?",seq_of_word[i1][place2],word_of_file[place]);
+        if(seq_of_word[i1][place2]!=word_of_files[place]){
+            return -1;
+        }
+        place--;place2--;
+    }
+
+    start+=(lenght+1);
+}
+if(state_of_star[i1]==2){
+    int lenght=0;
+    while(word_of_files[t+lenght]!=' '&&word_of_files[t+lenght]!='\n'){
+        lenght++;
+    }
+    if(lenght<strlen(seq_of_word[i1])){
+        return -1;
+    }
+    for(int o=0;o<strlen(seq_of_word[i1]);o++){
+        if(seq_of_word[i1][o]!=word_of_files[o+start]){
+            return -1;
+        }
+    }
+    start+=(lenght+1);
+}
+if(state_of_star[i1]==3){
+   int lenght=0;
+    while(word_of_files[t+lenght]!=' '&&word_of_files[t+lenght]!='\n'){
+        lenght++;
+    }
+    if(lenght<strlen(seq_of_word[i1])){
+        return -1;
+    }
+    int place=start;
+    int place2=0;
+    while(seq_of_word[i1][place2]!='*'){
+        if(seq_of_word[i1][place2]!=word_of_files[place]){
+            return -1;
+        }
+        place++;place2++;
+    }
+    place2=strlen(seq_of_word[i1])-1;
+    place=start+lenght-1;
+      while(place2>=0&&seq_of_word[i1][place2]!='*'){
+        if(seq_of_word[i1][place2]!=word_of_files[place]){
+            return -1;
+        }
+        place--;place2--;
+    }
+    start+=(lenght+1);
+
+}
+if(state_of_star[i1]==4){
+        int lenght=0;
+    while(word_of_files[t+lenght]!=' '&&word_of_files[t+lenght]!='\n'){
+        lenght++;
+    }
+    start+=(lenght+1);
+}
+i1++;
+}
+return start;
+}
+int find_word(char address[500],char myword[500]){
+for(int sss=0;sss<20000;sss++){
+    word_of_files[sss]='\0';
+}
+memset(state_of_star,-1,50);
+for(int r=0;r<10;r++){
+    memset(seq_of_word[r],'\0',22);
+}
+FILE * myfile;
+myfile=fopen(address,"r+");
+char temp='s';
+int i=0;
+while(temp!=EOF){
+    temp=fgetc(myfile);
+    if(temp!=EOF){
+    word_of_files[i]=temp;
+    i++;
+    }
+}
+fclose(myfile);
+int len = strlen(myword);
+int b=0;
+int c=0;
+int i4=0;
+while(myword[i4]!='\0'){
+    if(myword[i4]==' '){
+        b++;c=0;
+    }
+    else{
+        seq_of_word[b][c]=myword[i4];
+        c++;
+    }
+    i4++;
+}
+
+b++;
+int i2=0;
+int action_mode=1;
+int saver=0;
+int s=0;
+for(int ii=0;ii<b;ii++){
+    i2=0;
+    s=0;
+    if(!strcmp("*",seq_of_word[ii])){
+        state_of_star[ii]=4;
+        s=1;
+    }
+    saver=0;
+    if(seq_of_word[ii][0]=='*'&&s==0){
+        state_of_star[ii]=1;
+        saver=1;
+        s=1;
+    }
+    if(s==0&&seq_of_word[ii][strlen(seq_of_word[ii])-1]=='*'){
+        if(seq_of_word[ii][strlen(seq_of_word[ii])-2]!='\\'){
+         state_of_star[ii]=2;
+         seq_of_word[ii][strlen(seq_of_word[ii])-1]='\0';
+         s=1;
+        }
+    }
+    if(s==0&&if_star(ii)){
+        state_of_star[ii]=3;
+        s=1;
+    }
+    if(s==0){
+        state_of_star[ii]=0;
+    }
+
+
+    if(saver==1){
+        shift_char(0,ii);
+    }
+}
+for(int h=0;h<b;h++){
+    for(int hh=0;hh<20;hh++){
+        if(seq_of_word[h][hh]=='\\'&&seq_of_word[h][hh+1]=='*'){
+            shift_char(hh,h);
+        }
+    }
+}
+int shom=0;
+for(int i=0;i<20000;i++){
+    if(-1!=can_accept(i)){
+        place_of_word[shom]=i;
+        shom++;
+    }
+}
+return shom;
+}
 void line_to_word(){
 char naghavi=command_save[0];
 int i1=0;
@@ -496,7 +818,7 @@ if(line>num_of){
     FILE * aval;
     //printf("done");
     aval=fopen(add,"a+");
-    for(int u=0;u<line-num_of;u++){
+    for(int u=0;u<line-num_of-1;u++){
         fprintf(aval,"\n");
     }
     for(int uu=0;uu<col;uu++){
@@ -553,8 +875,58 @@ if(line<=num_of){
 
 }
 
+//replace functions
+int replace_n(int n,char old[500],char new1[500],char add[500]){
+int num=find_word(add,old);
+if(n>num){
+    return -1;
+}
+int start_point=place_of_word[n-1];
+int len_of_old=can_accept(start_point)-start_point-1;
+int len_of_new=strlen(new1);
+
+int len_of_file=strlen(word_of_files);
+    char temp[20000];
+    for(int my=0;my<20000;my++){
+    temp[my]='\0';
+}
+    for(int ii=0;ii<start_point;ii++){
+        temp[ii]=word_of_files[ii];
+    }
+    for(int i1=0;i1<len_of_new;i1++){
+        temp[i1+start_point]=new1[i1];
+    }
+    int pl_te=start_point+len_of_new;
+    int pl_old=start_point+len_of_old;
+    while(word_of_files[pl_old]!='\0'){
+        temp[pl_te]=word_of_files[pl_old];
+        pl_old++;pl_te++;
+    }
+int hg=0;
+while(temp[hg]!='\0'){
+    word_of_files[hg]=temp[hg];
+    hg++;
+}
+return 1;
+}
+//for saving file
+void save_file(char add[500]){
+remove(add);
+int u=0;
+FILE * ab;
+ab=fopen(add,"w+");
+while(word_of_files[u]!='\0'){
+    fprintf(ab,"%c",word_of_files[u]);
+    u++;
+}
+fclose(ab);
+}
 //main function
 int main(){
+//FILE * g;
+//g=fopen("_copy_.txt","w");
+//fclose(g);
+//system("attrib -h -s _copy_.txt");
 system("color 40");//red
 system("cls");//clean the screen
 while(1){
@@ -567,6 +939,10 @@ int pp=0;
 if(command_save[0]=='\0'||command_save[0]=='\n'){
     pp=1;
 }
+int has_eq_d=has_d();
+if(has_eq_d==1){
+    //some action need
+}
 line_to_word();
 if((!is_valid_one()&&(pp==0))){
     printf("invalid command!");
@@ -576,9 +952,7 @@ if(!strcmp(fristword,"finish")){
     break;
 }
 if(!strcmp(fristword,"createfile")){
-    //mkdir("ali");
-    //mkdir("ali/alii");
-        //printf("sal");
+    last_actin=1;
     if(has_file(word[2])){
         printf("This file exists already\n");
     }
@@ -604,8 +978,9 @@ if(!strcmp(fristword,"createfile")){
     }
 }
 if(!strcmp("cat",fristword)){
+        last_actin=2;
         if(!has_file(word[2])){
-        printf("%s Sorry! No file found!\n");
+        printf("Sorry! No file found!\n");
     }
     else{
     FILE * myfile;
@@ -619,6 +994,8 @@ if(!strcmp("cat",fristword)){
     }
 }
 if(!strcmp(fristword,"insertstr")){
+        last_actin=3;
+        make_copy(word[2]);
     if(!has_file(word[2])){
         printf("Sorry! No file found!\n");
     }
@@ -649,59 +1026,105 @@ if(!strcmp(fristword,"insertstr")){
         }
     insertstr(word[2],myline,mycol,word[4]);
     }
+}
 
 if(!strcmp(word[0],"find")){
-        if(!strcmp(word[5],"")){
-if(0==has_star(word[2])){
-    FILE *thisfile;
-    int li,co;
-    thisfile=fopen(word[4],"r+");
-    int df=0;
-    if(thisfile==NULL){
-        printf("No file\n");
+    last_actin=4;
+    if(!has_file(word[4])){
+        printf("no file!\n");
     }
     else{
-    first_element1(thisfile,word[2],&li,&co);
-    if(li==-1){
-        printf("Sorry! Not found!\n");
+        int tedad=find_word(word[4],word[2]);
+        if(tedad==0){
+            printf("no word found!\n");
+        }
+        else{
+            if(!strcmp("",word[5])){
+                printf("%i\n",place_of_word[0]);
+            }
+            else{
+            if(!strcmp("-count",word[5])){
+                if(strcmp("",word[6])){
+                    printf("invalid command\n");
+                }
+                else{
+                  printf("%i\n",tedad);
+                }
+            }
+            if(!strcmp("-at",word[5])){
+                int kj=0;
+                int num=0;
+                while(word[6][kj]!='\0'){
+                    num=10*num+(word[6][kj]-'0');
+                    kj++;
+                }
+                if(num>tedad){
+                    printf("out of range!\n");
+                }
+                else{
+                    if(!strcmp(word[7],"-byword")){
+                        printf("%d\n",byword(place_of_word[num-1]));
+                    }
+                    if(!strcmp(word[6],"-count")){
+                        printf("Invalid command!\n");
+                    }
+                    else{
+                    printf("%i\n",place_of_word[num-1]);
+                    }
+                }
+            }
+            if(!strcmp("-all",word[5])){
+                if(!strcmp("-at",word[6])){
+                    printf("invalid command!\n");
+                }
+                if(!strcmp("-byword",word[6])){
+                    for(int na=0;na<tedad;na++){
+                        printf("%i\n",byword(place_of_word[na]));
+                    }
+                if(!strcmp("",word[6])){
+                    for(int na=0;na<tedad;na++){
+                        printf("%i\n",place_of_word[na]);
+                    }
+                }
+                if(!strcmp("-count",word[6])){
+                    printf("invalid command!\n");
+                }
+                }
+            }//
+            if(!strcmp("-byword",word[5])){
+                if(!strcmp("",word[6])){
+                    printf("%i\n",byword(place_of_word[0]));
+                }
+                if(!strcmp("-all",word[6])){
+                    for(int ji=0;ji<tedad;ji++){
+                        printf("%i\n",byword(place_of_word[ji]));
+                    }
+                }
+                if(!strcmp("-at",word[6])){
+                    int hl=0;
+                    int cc=0;
+                    while(word[7][cc]!='\0'){
+                        hl=10*hl+(word[7][cc]-'0');
+                        cc++;
+                    }
+                    if(hl>tedad){
+                        printf("out of range\n");
+                    }
+                    else{
+                        printf("%i\n",byword(place_of_word[hl-1]));
+                    }
+                }
+                else{
+                    printf("invalid command!\n");
+                }
+            }
+        }
     }
-    else{
-            fclose(thisfile);
-            li=chanomin_karakteri(word[4],li+1,co);
-            printf("line: %d col: %d char: %d\n",li+1,co,li);
     }
     }
-    }
-if(1==has_star(word[2])){
-    FILE *thisfile;
-    int li,co;
-    thisfile=fopen(word[4],"r+");
-    int df=0;
-    if(thisfile==NULL){
-        printf("No file\n");
-    }
-    else{
-    first_element2(thisfile,word[2],&li,&co);
-    if(li==-1){
-        printf("Sorry! Not found!\n");
-    }
-    else{
-            fclose(thisfile);
-            li=chanomin_karakteri(word[4],li+1,co);
-            printf("line: %d col: %d char: %d\n",li+1,co,li);
-    }
-    }
-    }
-    }
-if(!strcmp(word[5],"-count")){
-int te=how_many_element(word[4],word[2]);
-printf("%i\n",te);
-}
-if(!strcmp(word[5],"-all")){
 
-}
-}
 if(!strcmp(fristword,"compare")){
+    last_actin=5;
     char b1[1000];
     char b2[1000];
     for(int ghj=0;ghj<1000;ghj++){
@@ -777,10 +1200,27 @@ if(!strcmp(fristword,"compare")){
     }
 }
 if(!strcmp(fristword,"grep")){
-        int mystop=0;
-    if(!strcmp(word[1],"--str")){
-        printf("invalid!");
-        mystop=1;
+        int num=0;
+    if(!strcmp(word[1],"-c")){
+        for(int g=5;g<15;g++){
+            num+=find_word(word[g],word[3]);
+        }
+        printf("%i\n",num);
+    }
+    if(!strcmp(word[1],"-i")){
+        for(int gg=5;gg<15;gg++){
+            if(find_word(word[gg],word[3])>0){
+                printf("%s\n",word[gg]);
+            }
+        }
+    }
+    if(!strcmp("-str",word[1])){
+        for(int ggg=4;ggg<15;ggg++){
+            int h=find_word(word[ggg],word[2]);
+            for(int r=0;r<h;r++){
+                printf("%i\n",place_of_word[r]);
+            }
+        }
     }
 }
 
@@ -815,6 +1255,7 @@ if(!strcmp(word[0],"copystr")){
     printf("copy\n");
 }
 if(!strcmp("cutstr",word[0])){
+        make_copy(word[2]);
     int lin1=0;int co1=0;
     int gg=0;
     int ggg=0;
@@ -833,9 +1274,32 @@ if(!strcmp("cutstr",word[0])){
         //printf("%d ",num_of_char);
         ggg++;
     }
+    for(int h=0;h<20000;h++){
+        word_of_files[h]='\0';
+    }
+    FILE * last;
+    char gj;
+    last=fopen(word[2],"r");
+    for(int tr=0;tr<20000;tr++){
+        gj=fgetc(last);
+        if(gj==EOF){
+            break;
+        }
+        word_of_files[tr]=gj;
+    }
+    int len=strlen(word_of_files);
     if(!strcmp("-f",word[7])){
     int st=chanomin_karakteri(word[2],lin1,co1);
-    remove_elment(word[2],st,num_of_char);}
+    if(st+num_of_char>len){
+        printf("sorry it is imposible!\n");
+    }
+    else{
+    for(int h1=st;h1<st+num_of_char;h1++){
+        clipcopy[h1-st]=word_of_files[h1];
+    }
+    remove_elment(word[2],st,num_of_char);
+    }
+    }
     if(!strcmp("-b",word[7])){
     int st=chanomin_karakteri(word[2],lin1,co1);
     if(st-num_of_char<0){
@@ -847,6 +1311,7 @@ if(!strcmp("cutstr",word[0])){
     }
 }
 if(!strcmp("pastestr",word[0])){
+    make_copy(word[2]);
      int lin1=0;int co1=0;
     int gg=0;
     int ggg=0;
@@ -858,14 +1323,98 @@ if(!strcmp("pastestr",word[0])){
     gg++;
     while(word[4][gg]!=' '&&word[4][gg]!='\0'){
         co1=10*co1+(word[4][gg]-'0');
+        gg++;
 }
+printf("done!\n");
 //int some=chanomin_karakteri(word[2],lin1,co1);
 insertstr(word[2],lin1,co1,clipcopy);
 }
-}
-}
 if(!strcmp("atuo-indent",word[0])){
-    make_copy_file(word[1]);
-    auto_indent(word[1]);
+    make_copy(word[1]);
+    atuo_indent(word[1]);
+}
+if(!strcmp("replace",word[0])){
+    make_copy(word[2]);
+    int tedad=find_word(word[6],word[2]);
+    if(!has_file(word[6])){
+        printf("no file !\n");
+    }
+    else{
+    if(tedad==0){
+        printf("No word to replace!\n");
+    }
+    else{
+        if(!strcmp("",word[7])){
+            replace_n(1,word[2],word[4],word[6]);
+        }
+        if(!strcmp("-all",word[7])){
+            if(!strcmp("",word[8])){
+                int te=find_word(word[6],word[2]);
+                for(int k=0;k<te;k++){
+                    replace_n(1,word[2],word[4],word[6]);
+                    save_file(word[6]);
+                }
+            }
+            else{
+                printf("invalid command!\n");
+            }
+        }
+        if(!strcmp("-at",word[7])){
+            if(!strcmp("",word[9])){
+                int na=0;int cl=0;
+                while(word[8][na]!='\0'){
+                    cl=10*cl+(word[8][na]-'\0');cl++;
+                }
+                if(cl<=tedad&&cl!=0){
+                    replace_n(cl,word[2],word[4],word[6]);
+                }
+                else{
+                    printf("out of range!\n");
+                }
+            }
+            else{
+                printf("invalid command!\n");
+            }
+        }
+    }
+    }
+}
+if(!strcmp("undo",word[0])){
+    system("attrib -h -s _copy_.txt");
+    rename(word[1],"_copy1_.txt");
+    rename("_copy_.txt",word[1]);
+    rename("_copy1_.txt","_copy_.txt");
+    system("attrib +h +s _copy_.txt");
+}
+if(!strcmp("tree",word[0])){
+    //address is saved in word[2]
+    int ip=0;
+    int number_sign=0;
+    int adad=0;
+    if(word[1][0]=='-'){
+        number_sign=-1;
+        ip++;
+    }
+    else{
+        number_sign=1;
+    }
+    while (word[1][ip]!='\0'){
+        adad=10*adad+(word[1][ip]-'48');
+        ip++;
+    }
+    if(number_sign==-1){
+        if(adad==1){
+            file_yab(word[2],0,400);
+            //infinity=400 :)
+        }
+        else{
+            printf("invalid depth!\n");
+        }
+    }
+    else{
+        file_yab(word[2],0,adad);
+    }
+}
+
 }
 }
